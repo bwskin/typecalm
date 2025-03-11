@@ -89,6 +89,24 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
         }
     }
 
+    const recordOf = <T>(inner: TypeGuard<T>) => {
+        return (val: unknown): {[key: string]: T} => {
+            if (val === null || typeof val !== 'object') {
+                errorHandler(invalidType(val, 'an `object`'));
+                errorHandler(`Cannot cast \`${JSON.stringify(val)}\` to object. Fingers crossed it's not important.`);
+                return val as {[key: string]: T}
+            }
+            const out = {}
+
+            for (const k in val) {
+                // @ts-ignore
+                out[k] = inner(val[k] as any)
+            }
+
+            return out
+        }
+    }
+
     // 
     // Optional modifiers
     //
@@ -180,6 +198,7 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
         string,
         array,
         object,
+        recordOf,
         nullable,
         optional,
         toNumber,
@@ -198,6 +217,7 @@ export const {
     string,
     array,
     object,
+    recordOf,
     nullable,
     optional,
     toNumber,
