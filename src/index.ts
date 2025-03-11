@@ -179,7 +179,7 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
             try {
                 mapped[name] = statements[name](value)
             } catch (e) {
-                errorHandler(`Cannot derive \`${name}\`: ${e}`)
+                errorHandler(`Cannot map \`${name}\`: ${e}`)
                 errorHandler(`Skipping \`${name}\`. Fingers crossed it's not important.`)
                 mapped[name] = undefined
             }
