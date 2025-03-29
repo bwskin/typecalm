@@ -93,7 +93,16 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
             const out: { [P in keyof T]: ReturnType<T[P]> } = {} as any;
 
             for (const k in inner) {
-                out[k] = inner[k]((val as any)[k])
+                let skipCleanup = forceError
+                try {
+                    forceError = true
+                    out[k] = inner[k]((val as any)[k])
+                } catch (e) {
+                    if (!skipCleanup) forceError = false
+                    errorHandler(`Object '${k}' property error: ${(e as Error).message}`)
+                } finally {
+                    if (!skipCleanup) forceError = false
+                }
             }
 
             return out
@@ -208,6 +217,21 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
         }
     }
 
+    const oneOf = <const T extends readonly unknown[]>(...values: T) => (value: unknown): T[number] => {
+        if (values.includes(value as T)) return value as T[number]
+        errorHandler(invalidType(value, `one of ${values}`))
+        value as unknown as T[number]
+    }
+
+    const as = <T>(guard: TypeGuard<T>) => <U extends T>(value: unknown) => guard(value) as U
+
+    const enumMember = <T>(enumType: T) => (value: unknown): T[keyof T]  => {
+        const isEnumItem = Object.keys(enumType as {}).map(key => enumType[key as keyof T]).includes(value as T[keyof T])
+        if (isEnumItem) return value as T[keyof T]
+        errorHandler(invalidType(value, 'a member of passed enum'))
+        return value as unknown as T[keyof T]
+    }
+
     //
     // Decorators
     //
@@ -271,6 +295,9 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
         stringBoolean,
         either,
         is,
+        oneOf,
+        enumMember,
+        as,
         rename,
         renameCase,
         mapper,
@@ -294,6 +321,9 @@ export const {
     either,
     is,
     rename,
+    oneOf,
+    enumMember,
+    as,
     renameCase,
     mapper,
     decorate

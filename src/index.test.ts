@@ -39,6 +39,52 @@ describe('strict', () => {
             expect(() => number([4])).toThrowError()
         })
     })
+    describe('object', () => {
+        test('correctly passes subguards', () => {
+            const testValue = {
+                obj: {
+                    num: 4,
+                    str: 'str',
+                    numarr: [1, 2, 3]
+                },
+                num: 4,
+                str: 'str',
+                numarr: [1, 2, 3]
+            }
+            expect(object({
+                obj: object({
+                    num: number,
+                    str: string,
+                    numarr: array(number)
+                }),
+                num: number,
+                str: string,
+                numarr: array(number)
+            })(testValue)).toStrictEqual(testValue)
+        })
+        test('correctly fails subguards', () => {
+            const failingTestValue = {
+                obj: {
+                    num: '4',
+                    str: 4,
+                    numarr: ['a', 'b']
+                },
+                num: '4',
+                str: 4,
+                numarr: ['a', 'b']
+            }
+            expect(() => object({
+                obj: object({
+                    num: number,
+                    str: string,
+                    numarr: array(number)
+                }),
+                num: number,
+                str: string,
+                numarr: array(number)
+            })(failingTestValue)).toThrow("Object 'obj' property error: Object 'num' property error: `\"4\"` is not a `number`.")
+        })
+    })
 })
 describe('either', () => {
     test('correctly passes numbers and strings', () => {

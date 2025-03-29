@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
-    "test": "vitest"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage --coverage.exclude 'lib'"
   },
   "author": "Norbert Bolanowski",
   "license": "MIT",
@@ -15,6 +16,7 @@
     "typescript": "^5.8.2"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^3.0.9",
     "vitest": "^3.0.8"
   }
 }
