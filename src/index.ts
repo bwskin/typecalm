@@ -121,6 +121,29 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
         else return inner(val)
     }
 
+    const either: <T, U>(inner1: TypeGuard<T>, inner2: TypeGuard<U>) => TypeGuard<T | U> = (inner1, inner2) => (value: unknown) => {
+        const errors = []
+        let skipCleanup = forceError
+        forceError = true
+
+        type R = (ReturnType<typeof inner1> | ReturnType<typeof inner2>)
+
+        try {
+            inner1(value)
+        } catch (e) {
+            errors.push(e)
+            try {
+                inner2(value)
+            } catch (e) {
+                errors.push(e)
+            }
+        } finally {
+            if (!skipCleanup) forceError = false
+            errors.forEach(e => errorHandler(String(e)))
+            return value as R
+        }
+    }
+
     //
     // Converters
     //
@@ -205,6 +228,7 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
         toString,
         toBoolean,
         stringBoolean,
+        either,
         is,
         mapper,
         decorate
