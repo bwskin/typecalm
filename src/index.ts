@@ -12,6 +12,17 @@ const castingType = (value: unknown, type: string) => {
     return `Casting \`${JSON.stringify(value)}\` to ${type}.`
 }
 
+const casing = {
+    snakeCase: {
+        toCamelCase: (str: string) => {
+            return str.replace(/([_][a-z1-9])/ig, (group: string) => {
+                return group.toUpperCase()
+                    .replace('_', '');
+            });
+        }
+    }
+}
+
 export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any) => void } = {}) => {
 
     //
@@ -124,22 +135,27 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
     const either: <T, U>(inner1: TypeGuard<T>, inner2: TypeGuard<U>) => TypeGuard<T | U> = (inner1, inner2) => (value: unknown) => {
         const errors = []
         let skipCleanup = forceError
+        let ok = false
         forceError = true
 
         type R = (ReturnType<typeof inner1> | ReturnType<typeof inner2>)
 
         try {
             inner1(value)
+            ok = true
         } catch (e) {
             errors.push(e)
             try {
                 inner2(value)
+                ok = true
             } catch (e) {
                 errors.push(e)
             }
         } finally {
             if (!skipCleanup) forceError = false
-            errors.forEach(e => errorHandler(String(e)))
+            if (!ok) {
+                errors.forEach(e => errorHandler(String(e)))
+            }
             return value as R
         }
     }
@@ -196,8 +212,8 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
     // Decorators
     //
 
-    const mapper = (statements: Record<string, (arg: any) => any >) => (value: any) => {
-        const mapped: Record<string, any> = {}
+    const mapper = (statements: Record<string, (arg: any) => any >) => (value: {[key: string]: unknown}) => {
+        const mapped: Record<string, unknown> = {}
         for (const name in statements) {
             try {
                 mapped[name] = statements[name](value)
@@ -210,6 +226,31 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
         return {
             ...value,
             ...mapped
+        }
+    }
+
+    const rename = (statements: Record<string, string>) => (value: {[key: string]: unknown}) => {
+        const mapped: Record<string, unknown> = {}
+        for (const name in value) {
+            const newName = statements[name]
+            if (newName) {
+                mapped[newName] = value[name]
+            } else {
+                mapped[name] = value[name]
+            }
+        }
+        return mapped
+    }
+
+    const renameCase = {
+        snake: {
+            toCamel: (value: {[key: string]: unknown}) => {
+                const statements: {[key: string]: string} = {}
+                for (const name in value) {
+                    statements[name] = casing.snakeCase.toCamelCase(name)
+                }
+                return rename(statements)(value)
+            }
         }
     }
 
@@ -230,6 +271,8 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
         stringBoolean,
         either,
         is,
+        rename,
+        renameCase,
         mapper,
         decorate
     }
@@ -248,7 +291,10 @@ export const {
     toString,
     toBoolean,
     stringBoolean,
+    either,
     is,
+    rename,
+    renameCase,
     mapper,
     decorate
 } = TypeCalm()
