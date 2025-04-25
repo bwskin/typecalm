@@ -100,6 +100,7 @@ export const TypeCalm = ({ customErrorHandler }: { customErrorHandler?: (e: any)
                 } catch (e) {
                     if (!skipCleanup) forceError = false
                     errorHandler(`Object '${k}' property error: ${(e as Error).message}`)
+                    out[k] = (val as any)[k]
                 } finally {
                     if (!skipCleanup) forceError = false
                 }
